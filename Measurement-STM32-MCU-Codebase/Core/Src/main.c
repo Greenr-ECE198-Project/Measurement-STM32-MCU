@@ -120,6 +120,12 @@ int main(void)
   while (1)
   {
 
+	  // TODO: Add sensor code above data sending code.
+
+	  /*
+	   * The code below will send the number 0b10101010
+	   * whenever the button is clicked.
+	   */
 	  HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, 1);
 	  if(HAL_GPIO_ReadPin(onboard_button_blue_GPIO_Port, onboard_button_blue_Pin) == 1) continue;
 	  sendData(onboard_LED_GPIO_Port, onboard_LED_Pin, 0b10101010, 250);
