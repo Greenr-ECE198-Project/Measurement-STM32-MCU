@@ -57,6 +57,28 @@ static void MX_USART2_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void sendData(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, int value, int clockDelay) {
+	/*
+	 * Iterates through all bits of a given value.
+	 *
+	 * If the bit is a one, the provided GPIO pin
+	 * will be set to 3.3v for one clock cycle.
+	 *
+	 * If the bit is a zero, the provided GPIO pin
+	 * will be set to 0v for one clock cycle.
+	 */
+
+	const int MASK = 1;
+
+	for(int i = 0; i < 8; i ++) {
+		HAL_GPIO_WritePin(GPIOx, GPIO_Pin, value & MASK);
+		HAL_Delay(clockDelay);
+		value >>= 1;
+	}
+	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, 1);
+	HAL_Delay(clockDelay);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -97,6 +119,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+	  HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, 1);
+	  if(HAL_GPIO_ReadPin(onboard_button_blue_GPIO_Port, onboard_button_blue_Pin) == 1) continue;
+	  sendData(onboard_LED_GPIO_Port, onboard_LED_Pin, 0b10101010, 250);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -201,20 +227,20 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  /*Configure GPIO pin : onboard_button_blue_Pin */
+  GPIO_InitStruct.Pin = onboard_button_blue_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(onboard_button_blue_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
+  /*Configure GPIO pin : onboard_LED_Pin */
+  GPIO_InitStruct.Pin = onboard_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(onboard_LED_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
