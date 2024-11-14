@@ -70,11 +70,20 @@ void sendData(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, int value, int clockDelay)
 
 	const int MASK = 1;
 
+	// Start Bit
+	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, 0);
+	HAL_Delay(clockDelay);
+
+	// Data Bits
 	for(int i = 0; i < 8; i ++) {
 		HAL_GPIO_WritePin(GPIOx, GPIO_Pin, value & MASK);
 		HAL_Delay(clockDelay);
 		value >>= 1;
 	}
+
+	// End Bit
+	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, 0);
+	HAL_Delay(clockDelay);
 	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, 1);
 	HAL_Delay(clockDelay);
 }
