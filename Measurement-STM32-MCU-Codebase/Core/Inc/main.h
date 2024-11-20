@@ -59,6 +59,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define onboard_button_blue_Pin GPIO_PIN_13
 #define onboard_button_blue_GPIO_Port GPIOC
+#define send_data_Pin GPIO_PIN_0
+#define send_data_GPIO_Port GPIOC
 #define USART_TX_Pin GPIO_PIN_2
 #define USART_TX_GPIO_Port GPIOA
 #define USART_RX_Pin GPIO_PIN_3

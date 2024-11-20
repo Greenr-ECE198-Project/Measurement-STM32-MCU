@@ -66,25 +66,38 @@ void sendData(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, int value, int clockDelay)
 	 *
 	 * If the bit is a zero, the provided GPIO pin
 	 * will be set to 0v for one clock cycle.
+	 *
+	 * Note: This sends the least significant bit first,
+	 *       and the most significant bit last
+	 *
+	 *       So 0b1010 will be sent like:
+	 *       1: 0
+	 *       2: 1
+	 *       3: 0
+	 *       4: 1
 	 */
 
 	const int MASK = 1;
 
 	// Start Bit
 	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, 0);
+//	HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, 0);
 	HAL_Delay(clockDelay);
 
 	// Data Bits
-	for(int i = 0; i < 8; i ++) {
+	for(int i = 0; i < 8; i++) {
 		HAL_GPIO_WritePin(GPIOx, GPIO_Pin, value & MASK);
-		HAL_Delay(clockDelay);
+//		HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, value & MASK);
 		value >>= 1;
+		HAL_Delay(clockDelay);
 	}
 
 	// End Bit
 	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, 0);
+//	HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, 0);
 	HAL_Delay(clockDelay);
 	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, 1);
+//	HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, 1);
 	HAL_Delay(clockDelay);
 }
 
@@ -122,6 +135,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  const int clockDelay = 1000;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -137,7 +151,7 @@ int main(void)
 	   */
 	  HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, 1);
 	  if(HAL_GPIO_ReadPin(onboard_button_blue_GPIO_Port, onboard_button_blue_Pin) == 1) continue;
-	  sendData(onboard_LED_GPIO_Port, onboard_LED_Pin, 0b10101010, 250);
+	  sendData(send_data_GPIO_Port, send_data_Pin, 0b10101010, clockDelay);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -242,6 +256,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(send_data_GPIO_Port, send_data_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : onboard_button_blue_Pin */
@@ -249,6 +266,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(onboard_button_blue_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : send_data_Pin */
+  GPIO_InitStruct.Pin = send_data_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(send_data_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : onboard_LED_Pin */
   GPIO_InitStruct.Pin = onboard_LED_Pin;
