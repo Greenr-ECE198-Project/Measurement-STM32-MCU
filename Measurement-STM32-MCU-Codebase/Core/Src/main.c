@@ -81,23 +81,17 @@ void sendData(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, int value, int clockDelay)
 
 	// Start Bit
 	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, 0);
-//	HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, 0);
 	HAL_Delay(clockDelay);
 
 	// Data Bits
 	for(int i = 0; i < 8; i++) {
 		HAL_GPIO_WritePin(GPIOx, GPIO_Pin, value & MASK);
-//		HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, value & MASK);
 		value >>= 1;
 		HAL_Delay(clockDelay);
 	}
 
 	// End Bit
-	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, 0);
-//	HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, 0);
-	HAL_Delay(clockDelay);
 	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, 1);
-//	HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, 1);
 	HAL_Delay(clockDelay);
 }
 
@@ -135,7 +129,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  const int clockDelay = 1000;
+  const int clockDelay = 100;
   /* USER CODE END 2 */
 
   /* Infinite loop */
