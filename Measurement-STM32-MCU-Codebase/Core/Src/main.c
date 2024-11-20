@@ -130,6 +130,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   const int clockDelay = 100;
+
+  // Prevents false data reading on startup or restart
+  sendData(send_data_GPIO_Port, send_data_Pin, 0xFF, clockDelay);
   /* USER CODE END 2 */
 
   /* Infinite loop */
