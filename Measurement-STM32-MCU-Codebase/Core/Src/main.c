@@ -22,6 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <math.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,6 +42,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -50,12 +54,47 @@ UART_HandleTypeDef huart2;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+float convertResistanceToTemperature(float R_therm) {
+    // Example conversion using the Steinhart-Hart equation or a lookup table
+    float A = 1.009249522e-03;
+    float B = 2.378405444e-04;
+    float C = 2.019202697e-07;
+
+    float logR = log(R_therm);
+    float tempK = 1.0 / (A + B * logR + C * logR * logR * logR); // Temperature in Kelvin
+    float tempC = tempK - 273.15; // Convert to Celsius
+    return tempC;
+}
+
+float readTemperature(void) {
+    uint32_t adcValue;
+
+    // Start the ADC and poll for conversion
+    HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+    adcValue = HAL_ADC_GetValue(&hadc1);
+
+    float temperature = 0;
+
+    // Convert the ADC value to voltage
+    float voltage = (3.3 * adcValue) / 4095.0;
+
+    // Calculate thermistor resistance from voltage divider
+    float R_fixed = 10000.0; // 10k ohms
+    float R_therm = R_fixed * ((3.3 / voltage) - 1);
+
+    // Convert resistance to temperature (using an approximation or datasheet values)
+    temperature = convertResistanceToTemperature(R_therm);
+    return temperature;
+}
 
 void sendData(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, int value, int clockDelay) {
 	/*
@@ -127,12 +166,16 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
   const int clockDelay = 100;
+  const char msg[20];
 
   // Prevents false data reading on startup or restart
   sendData(send_data_GPIO_Port, send_data_Pin, 0xFF, clockDelay);
+  HAL_ADC_Start(&hadc1);
+  uint16_t ADC_Value;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -146,9 +189,15 @@ int main(void)
 	   * The code below will send the number 0b10101010
 	   * whenever the button is clicked.
 	   */
+	  int temperature_final = (int) readTemperature();
 	  HAL_GPIO_WritePin(onboard_LED_GPIO_Port, onboard_LED_Pin, 1);
 	  if(HAL_GPIO_ReadPin(onboard_button_blue_GPIO_Port, onboard_button_blue_Pin) == 1) continue;
-	  sendData(send_data_GPIO_Port, send_data_Pin, 0b10101010, clockDelay);
+	  sendData(send_data_GPIO_Port, send_data_Pin, temperature_final, clockDelay);
+
+	  // Debug Tool for reading temperature value.
+//	  sprintf(msg, "%u\r\n", temperature_final);
+//	  HAL_UART_Transmit(&huart2, (uint32_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -200,6 +249,58 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
 }
 
 /**
